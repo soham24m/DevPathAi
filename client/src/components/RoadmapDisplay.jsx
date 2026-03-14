@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle, Circle, Trophy } from 'lucide-react';
+import { BookOpen, CheckCircle, Circle, Trophy, Calendar } from 'lucide-react';
 import axios from 'axios';
 
 function YouTubeSection({ theme }) {
@@ -43,6 +43,70 @@ function YouTubeSection({ theme }) {
   );
 }
 
+function DailyPlanSection({ theme, tasks, milestone }) {
+  const [plan, setPlan] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+  const [completedDayTasks, setCompletedDayTasks] = useState({});
+
+  const fetchPlan = async () => {
+    if (show) { setShow(false); return; }
+    if (plan) { setShow(true); return; }
+    setLoading(true);
+    try {
+      const res = await axios.post('http://localhost:8080/daily-plan', { theme, tasks, milestone });
+      setPlan(res.data.plan);
+      setShow(true);
+    } catch { console.error('Failed') }
+    finally { setLoading(false); }
+  };
+
+  const toggleDayTask = (dayIdx, taskIdx) => {
+    const key = `${dayIdx}-${taskIdx}`;
+    setCompletedDayTasks(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <div className="mt-3">
+      <button onClick={fetchPlan} disabled={loading}
+        className="w-full py-3 rounded-xl border border-purple-900 text-purple-400 text-xs font-bold tracking-widest uppercase hover:bg-purple-950/30 hover:border-purple-500 transition-all">
+        {loading ? '🧠 Generating plan...' : show ? '✕ Hide Daily Plan' : '📅 Generate 7-Day Plan'}
+      </button>
+
+      {show && plan && (
+        <div className="mt-4 space-y-3">
+          <h4 className="text-xs text-gray-500 uppercase tracking-widest mb-3">7-Day Daily Breakdown</h4>
+          {plan.days.map((day, dayIdx) => (
+            <div key={dayIdx} className="bg-black border border-gray-800 rounded-xl p-4 hover:border-purple-500/30 transition-all">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-purple-950 border border-purple-800 flex items-center justify-center text-purple-400 text-xs font-black">
+                  {day.day}
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{day.title}</p>
+                  <p className="text-gray-500 text-xs">{day.focus}</p>
+                </div>
+              </div>
+              <div className="space-y-2 ml-11">
+                {day.tasks.map((task, taskIdx) => {
+                  const key = `${dayIdx}-${taskIdx}`;
+                  return (
+                    <div key={taskIdx} onClick={() => toggleDayTask(dayIdx, taskIdx)}
+                      className="flex items-start gap-2 cursor-pointer group">
+                      <div className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 transition-all ${completedDayTasks[key] ? 'bg-purple-500 border-purple-500' : 'border-gray-700 group-hover:border-purple-400'}`} />
+                      <span className={`text-xs transition-all ${completedDayTasks[key] ? 'line-through text-gray-600' : 'text-gray-400'}`}>{task}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const RoadmapDisplay = ({ roadmap }) => {
   const [completedTasks, setCompletedTasks] = useState(new Set());
   const [progress, setProgress] = useState(0);
@@ -61,18 +125,14 @@ const RoadmapDisplay = ({ roadmap }) => {
   const toggleTask = (taskId) => {
     setCompletedTasks(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-      }
+      if (newSet.has(taskId)) newSet.delete(taskId);
+      else newSet.add(taskId);
       return newSet;
     });
   };
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
-      {/* Header */}
       <div className="glass-panel mb-10 sticky top-4 z-10 flex flex-col md:flex-row items-center justify-between gap-6 px-6 py-5">
         <div className="text-left flex-1 border-b md:border-b-0 md:border-r border-slate-800/70 pb-4 md:pb-0 md:pr-6 hidden md:block">
           <p className="mono-label text-[11px] tracking-[0.32em] uppercase text-cyan-300/80 mb-2">Active Roadmap</p>
@@ -90,7 +150,6 @@ const RoadmapDisplay = ({ roadmap }) => {
         </div>
       </div>
 
-      {/* Weekly cards */}
       <div className="space-y-8">
         {roadmap.weeks.map((weekData) => (
           <div key={weekData.week} className="glass-panel overflow-hidden transition-all duration-700 hover:border-cyan-400/30 group">
@@ -120,7 +179,7 @@ const RoadmapDisplay = ({ roadmap }) => {
                 })}
               </div>
 
-              <div className="rounded-xl border border-slate-800/80 bg-gradient-to-br from-slate-950/80 to-black/70 p-4">
+              <div className="rounded-xl border border-slate-800/80 bg-gradient-to-br from-slate-950/80 to-black/70 p-4 mb-4">
                 <div className="flex items-start gap-3">
                   <Trophy className="text-cyan-300 w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
@@ -131,7 +190,7 @@ const RoadmapDisplay = ({ roadmap }) => {
               </div>
 
               {weekData.resources && weekData.resources.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-slate-800/80">
+                <div className="mb-4 pt-4 border-t border-slate-800/80">
                   <h4 className="mono-label text-[10px] tracking-[0.3em] uppercase text-slate-500 mb-3">Recommended Resources</h4>
                   <ul className="flex flex-wrap gap-2">
                     {weekData.resources.map((res, i) => (
@@ -141,7 +200,7 @@ const RoadmapDisplay = ({ roadmap }) => {
                 </div>
               )}
 
-              {/* YouTube Section */}
+              <DailyPlanSection theme={weekData.theme} tasks={weekData.tasks} milestone={weekData.milestone} />
               <YouTubeSection theme={weekData.theme} />
             </div>
           </div>

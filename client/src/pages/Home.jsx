@@ -29,7 +29,7 @@ export default function Home() {
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50 flex items-center justify-between px-8 py-5">
         <span className="text-white font-bold text-xl tracking-widest">DEVPATH AI</span>
-        <span className="text-gray-500 text-sm tracking-widest">BETA</span>
+        <a href="/about" className="text-gray-500 hover:text-white text-sm tracking-widest transition">ABOUT</a>
       </nav>
 
       {/* HERO */}
