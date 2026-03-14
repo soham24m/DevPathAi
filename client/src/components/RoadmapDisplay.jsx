@@ -1,15 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, CheckCircle, Circle, Trophy } from 'lucide-react';
+import axios from 'axios';
+
+function YouTubeSection({ theme }) {
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const fetchVideos = async () => {
+    if (show) { setShow(false); return; }
+    setLoading(true);
+    try {
+      const q = encodeURIComponent(`${theme} tutorial for beginners`);
+      const res = await axios.get(`http://localhost:8080/youtube?q=${q}`);
+      setVideos(res.data.videos);
+      setShow(true);
+    } catch { console.error('Failed') }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="mt-4">
+      <button onClick={fetchVideos} disabled={loading}
+        className="w-full py-3 rounded-xl border border-red-900 text-red-400 text-xs font-bold tracking-widest uppercase hover:bg-red-950/30 hover:border-red-500 transition-all">
+        {loading ? '🔍 Searching...' : show ? '✕ Hide Videos' : '▶ Find YouTube Resources'}
+      </button>
+      {show && videos.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {videos.map((video, i) => (
+            <a key={i} href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer"
+              className="flex gap-3 p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-red-500/50 transition-all group">
+              <img src={video.thumbnail} alt={video.title} className="w-24 h-16 rounded-lg object-cover flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold line-clamp-2 group-hover:text-red-400 transition-colors">{video.title}</p>
+                <p className="text-gray-500 text-xs mt-1">{video.channel}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const RoadmapDisplay = ({ roadmap }) => {
   const [completedTasks, setCompletedTasks] = useState(new Set());
   const [progress, setProgress] = useState(0);
 
-  // Total tasks count
-  const allTasks = roadmap.weeks.flatMap(week => 
+  const allTasks = roadmap.weeks.flatMap(week =>
     week.tasks.map(task => ({ weekNumber: week.week, task }))
   );
-  
+
   useEffect(() => {
     if (allTasks.length > 0) {
       const percentage = Math.round((completedTasks.size / allTasks.length) * 100);
@@ -31,109 +72,87 @@ const RoadmapDisplay = ({ roadmap }) => {
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
-      <div className="glass-panel p-6 mb-8 text-center sticky top-4 z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="text-left flex-1 border-r border-white/10 pr-6 hidden md:block">
-          <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-            {roadmap.title}
-          </h3>
-          <p className="text-sm text-textMuted mt-1">Goal: {roadmap.goal}</p>
+      {/* Header */}
+      <div className="glass-panel mb-10 sticky top-4 z-10 flex flex-col md:flex-row items-center justify-between gap-6 px-6 py-5">
+        <div className="text-left flex-1 border-b md:border-b-0 md:border-r border-slate-800/70 pb-4 md:pb-0 md:pr-6 hidden md:block">
+          <p className="mono-label text-[11px] tracking-[0.32em] uppercase text-cyan-300/80 mb-2">Active Roadmap</p>
+          <h3 className="text-lg md:text-xl font-medium tracking-[0.14em] uppercase text-slate-50">{roadmap.title}</h3>
+          <p className="mono-label text-[11px] text-slate-400 mt-1">Goal: {roadmap.goal}</p>
         </div>
-        
         <div className="flex-1 w-full">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-semibold text-textMuted">Overall Progress</span>
-            <span className="font-bold text-secondary text-lg">{progress}%</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="mono-label text-[11px] tracking-[0.26em] uppercase text-slate-400">Overall Progress</span>
+            <span className="mono-label text-[12px] text-cyan-300">{progress.toString().padStart(2, '0')}%</span>
           </div>
-          <div className="w-full bg-black/50 rounded-full h-3 overflow-hidden shadow-inner">
-            <div 
-              className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-1 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="w-1.5 h-1.5 bg-white rounded-full opacity-70"></div>
-            </div>
+          <div className="mission-progress-track h-3">
+            <div className="mission-progress-bar h-3 transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
           </div>
         </div>
       </div>
 
+      {/* Weekly cards */}
       <div className="space-y-8">
         {roadmap.weeks.map((weekData) => (
-          <div key={weekData.week} className="glass-panel overflow-hidden transition-all hover:border-primary/30 group">
-            <div className="bg-card/60 p-5 flex items-center justify-between border-b border-white/5 relative">
-              <div className="absolute left-0 top-0 h-full w-1 bg-primary opacity-50 group-hover:opacity-100 transition-opacity"></div>
+          <div key={weekData.week} className="glass-panel overflow-hidden transition-all duration-700 hover:border-cyan-400/30 group">
+            <div className="relative px-6 py-4 flex items-center justify-between border-b border-slate-800/70 bg-black/60">
+              <div className="absolute left-0 top-0 h-full w-px bg-cyan-400/40 group-hover:bg-cyan-300/80 transition-colors" />
               <div>
-                <span className="text-xs uppercase tracking-wider text-primary font-bold mb-1 block">
-                  Week {weekData.week} of {roadmap.totalWeeks}
-                </span>
-                <h3 className="text-xl font-semibold text-white">{weekData.theme}</h3>
+                <span className="mono-label text-[10px] tracking-[0.3em] uppercase text-cyan-300/80 mb-1 block">Week {weekData.week} of {roadmap.totalWeeks}</span>
+                <h3 className="text-base md:text-lg font-medium tracking-[0.14em] uppercase text-slate-50">{weekData.theme}</h3>
               </div>
-              <BookOpen className="text-textMuted w-5 h-5" />
+              <BookOpen className="w-5 h-5 text-slate-500" />
             </div>
-            
-            <div className="p-6">
+
+            <div className="p-6 bg-black/70">
               <div className="space-y-3 mb-6">
                 {weekData.tasks.map((task, index) => {
                   const taskId = `wk${weekData.week}-tsk${index}`;
                   const isCompleted = completedTasks.has(taskId);
-                  
                   return (
-                    <div 
-                      key={taskId}
-                      onClick={() => toggleTask(taskId)}
-                      className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer transition-all border border-transparent
-                        ${isCompleted ? 'bg-primary/10 border-primary/20' : 'hover:bg-white/5'}
-                      `}
-                    >
+                    <div key={taskId} onClick={() => toggleTask(taskId)}
+                      className={`flex items-start gap-4 px-3 py-2.5 rounded-xl cursor-pointer transition-all border ${isCompleted ? 'border-emerald-400/60 bg-emerald-500/10 shadow-[0_0_40px_rgba(34,197,94,0.45)]' : 'border-slate-800/80 hover:border-cyan-400/60 hover:bg-slate-900/80'}`}>
                       <button className="flex-shrink-0 mt-0.5 focus:outline-none">
-                        {isCompleted ? (
-                          <CheckCircle className="text-primary w-5 h-5 fill-primary/20" />
-                        ) : (
-                          <Circle className="text-textMuted w-5 h-5 hover:text-white transition-colors" />
-                        )}
+                        {isCompleted ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <Circle className="w-5 h-5 text-slate-500" />}
                       </button>
-                      <span className={`text-base transition-all ${isCompleted ? 'text-textMuted line-through decoration-primary/50' : 'text-gray-200'}`}>
-                        {task}
-                      </span>
+                      <span className={`text-sm md:text-[15px] transition-all ${isCompleted ? 'task-text-complete' : 'text-slate-200'}`}>{task}</span>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="bg-gradient-to-br from-black/40 to-black/20 rounded-xl p-4 border border-white/5">
+              <div className="rounded-xl border border-slate-800/80 bg-gradient-to-br from-slate-950/80 to-black/70 p-4">
                 <div className="flex items-start gap-3">
-                  <Trophy className="text-secondary w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <Trophy className="text-cyan-300 w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-semibold text-secondary mb-1">Weekly Milestone</h4>
-                    <p className="text-sm text-textMuted leading-relaxed">{weekData.milestone}</p>
+                    <h4 className="mono-label text-[11px] tracking-[0.28em] uppercase text-slate-400 mb-1">Weekly Milestone</h4>
+                    <p className="text-sm text-slate-200 leading-relaxed">{weekData.milestone}</p>
                   </div>
                 </div>
               </div>
-              
+
               {weekData.resources && weekData.resources.length > 0 && (
-                 <div className="mt-6 pt-4 border-t border-white/5">
-                   <h4 className="text-xs font-bold uppercase tracking-wider text-textMuted mb-3 flex items-center gap-2">
-                     Recommended Resources
-                   </h4>
-                   <ul className="flex flex-wrap gap-2">
-                     {weekData.resources.map((res, i) => (
-                       <li key={i} className="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-full border border-white/10">
-                         {res}
-                       </li>
-                     ))}
-                   </ul>
-                 </div>
+                <div className="mt-6 pt-4 border-t border-slate-800/80">
+                  <h4 className="mono-label text-[10px] tracking-[0.3em] uppercase text-slate-500 mb-3">Recommended Resources</h4>
+                  <ul className="flex flex-wrap gap-2">
+                    {weekData.resources.map((res, i) => (
+                      <li key={i} className="text-[11px] md:text-xs bg-slate-900/80 text-slate-200 px-3 py-1.5 rounded-full border border-slate-700/80">{res}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
+
+              {/* YouTube Section */}
+              <YouTubeSection theme={weekData.theme} />
             </div>
           </div>
         ))}
       </div>
-      
+
       {progress === 100 && (
-         <div className="mt-12 text-center animate-pulse">
-           <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-2">
-             Congratulations! 🎉
-           </h2>
-           <p className="text-textMuted">You have completed your Roadmap.</p>
-         </div>
+        <div className="mt-12 text-center">
+          <h2 className="text-2xl md:text-3xl font-medium tracking-[0.2em] uppercase text-slate-50 mb-2">Mission Accomplished</h2>
+          <p className="mono-label text-[11px] text-slate-400">Every task complete. This trajectory is closed; the next one is already waiting.</p>
+        </div>
       )}
     </div>
   );
