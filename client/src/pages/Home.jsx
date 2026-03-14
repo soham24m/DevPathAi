@@ -14,7 +14,7 @@ export default function Home() {
     setError('')
     setLoading(true)
     try {
-      const res = await axios.post('http://localhost:8080/generate-roadmap', { goal, weeks })
+      const res = await axios.post('https://devpathai.onrender.com/generate-roadmap', { goal, weeks })
       navigate('/roadmap', { state: { roadmap: res.data.roadmap } })
     } catch {
       setError('Something went wrong. Check if your server is running.')

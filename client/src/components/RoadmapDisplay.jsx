@@ -12,7 +12,7 @@ function YouTubeSection({ theme }) {
     setLoading(true);
     try {
       const q = encodeURIComponent(`${theme} tutorial for beginners`);
-      const res = await axios.get(`http://localhost:8080/youtube?q=${q}`);
+      const res = await axios.get(`https://devpathai.onrender.com/youtube?q=${q}`);
       setVideos(res.data.videos);
       setShow(true);
     } catch { console.error('Failed') }
@@ -54,7 +54,7 @@ function DailyPlanSection({ theme, tasks, milestone }) {
     if (plan) { setShow(true); return; }
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:8080/daily-plan', { theme, tasks, milestone });
+      const res = await axios.post('https://devpathai.onrender.com/daily-plan', { theme, tasks, milestone });
       setPlan(res.data.plan);
       setShow(true);
     } catch { console.error('Failed') }
